@@ -1,51 +1,45 @@
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import React, { useState } from "react";
-import { Form, Button, Container, Row, Col } from "react-bootstrap";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import React, { useContext, useState } from "react";
+import { Button, Col, Container, Form, Row } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
 import { auth } from "../Services/firebase";
-import { validateSignUpForm } from "../Services/helper";
-import { Link } from "react-router-dom";
+import { validateLoginForm } from "../Services/helper";
+import { useDispatch } from "react-redux";
 
-const Signup = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+const Login = () => {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  //   const { isLoggedIn, setIsLoggedIn } = useContext(Context);
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
       e.preventDefault();
-
-      const error = validateSignUpForm({ email, password, confirmPassword });
+      const error = validateLoginForm({ email, password });
       if (error) {
         setError(error);
         removeValidationMessage();
         return;
       }
-      const userCredential = await createUserWithEmailAndPassword(
+      const userCredential: any = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
-
-      setSuccess("Sign up is successfull");
-      removeValidationMessage();
-    } catch (err) {
-      setError("User Already exist!");
-      removeValidationMessage();
-      console.log(err);
+      localStorage.setItem("accessToken", userCredential.user.accessToken);
+      dispatch({ type: "LOGIN" });
+      navigate("/expense");
+    } catch (error) {
+      console.log(error);
     }
-
-    // console.log({ email, password, confirmPassword });
   };
 
   const removeValidationMessage = () => {
     setTimeout(() => {
-      setSuccess("");
       setError("");
     }, 1000);
   };
-
   return (
     <Container
       className="d-flex justify-content-center align-items-center"
@@ -54,13 +48,12 @@ const Signup = () => {
       <Row>
         <Col>
           {error && <p style={{ color: "red" }}>{error}</p>}
-          {success && <p style={{ color: "green" }}>{success}</p>}
           <Form
             onSubmit={handleSubmit}
             className="border p-4 rounded"
             style={{ minWidth: "300px" }}
           >
-            <h2 className="text-center mb-4">Sign Up</h2>
+            <h2 className="text-center mb-4">Login</h2>
             <Form.Group controlId="formEmail">
               <Form.Label>Email address</Form.Label>
               <Form.Control
@@ -81,20 +74,10 @@ const Signup = () => {
                 required
               />
             </Form.Group>
-            <Form.Group controlId="formConfirmPassword" className="mt-3">
-              <Form.Label>Confirm Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </Form.Group>
             <Button variant="primary" type="submit" className="mt-4 w-100">
-              Sign Up
+              Login
             </Button>
-            Have an account?<Link to="/login">Login</Link>
+            Have an account? <Link to="/signup">Sign up</Link>
           </Form>
         </Col>
       </Row>
@@ -102,4 +85,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default Login;
